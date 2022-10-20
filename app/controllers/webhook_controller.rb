@@ -12,7 +12,8 @@ class WebhookController < ApplicationController
 
   def callback
     body = request.body.read
-
+    puts '-'*100
+    p request.body.read
     signature = request.env['HTTP_X_LINE_SIGNATURE']
     unless client.validate_signature(body, signature)
       head 470
@@ -24,17 +25,20 @@ class WebhookController < ApplicationController
       when Line::Bot::Event::Message
         case event.type
         when Line::Bot::Event::MessageType::Text
+          reply_message_list = %w[test1 test2 test3 test4 test5]
           message = {
             type: 'text',
-            text: event.message['text']
+            text: reply_message_list.sample
           }
           client.reply_message(event['replyToken'], message)
-        when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
-          response = client.get_message_content(event.message['id'])
-          tf = Tempfile.open("content")
-          tf.write(response.body)
+        else
+          message = {
+            type: "sticker",
+            packageId: "446",
+            stickerId: rand(1988..2027)
+          }
+          client.reply_message(event['replyToken'], message)
         end
-        
       end
     }
     head :ok
