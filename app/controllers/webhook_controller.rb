@@ -5,6 +5,10 @@ class WebhookController < ApplicationController
 
   def callback
     body = request.body.read
+    puts '-'*100
+    puts request.body.read
+    puts '-'*100
+
     signature = request.env['HTTP_X_LINE_SIGNATURE']
     unless client.validate_signature(body, signature)
       head 470
@@ -21,6 +25,10 @@ class WebhookController < ApplicationController
             text: pickup_random_text('positive')
           }
           client.reply_message(event['replyToken'], message)
+          # client.push_message("user_id or group_id", message)
+          number = client.get_number_of_message_deliveries("20221020")
+          puts '-'*100
+          puts number
         else
           message = {
             type: "sticker",
