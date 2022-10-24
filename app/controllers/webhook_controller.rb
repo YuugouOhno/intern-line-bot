@@ -5,33 +5,54 @@ class WebhookController < ApplicationController
 
   def callback
     body = request.body.read
+
     signature = request.env['HTTP_X_LINE_SIGNATURE']
     unless client.validate_signature(body, signature)
       head 470
     end
-
+    
     events = client.parse_events_from(body)
+
     events.each { |event|
       case event
+      # グループ参加時
+      when Line::Bot::Event::Join
+        group_id = event['source']['groupId']
+        group = Group.create({group_id: group_id})
+      # グループ退会時
+      when Line::Bot::Event::Leave
+        group_id = event['source']['groupId']
+        Group.find_by(group_id: group_id).destroy
+      # メッセージ受信時
       when Line::Bot::Event::Message
-        case event.type
-        when Line::Bot::Event::MessageType::Text
-          message = {
-            type: 'text',
-            text: pickup_random_text('positive')
-          }
-          client.reply_message(event['replyToken'], message)
-        else
-          message = {
-            type: "sticker",
-            packageId: STICKER_PACKAGE_ID,
-            stickerId: pickup_random_sticker_id
-          }
-          client.reply_message(event['replyToken'], message)
-        end
+        group = Group.find_by(group_id: event['source']['groupId'])
+        message_type = event["message"]["type"]
+        text = event["message"]["text"]
+        message = Message.create({group_id: group.id, message_type: message_type, text: text})
+
+        push_message(message)
       end
     }
     head :ok
+  end
+
+  def push_message(message)
+    group_id = message.group.group_id
+    case message.message_type
+    when "text"
+      message = {
+        type: 'text',
+        text: pickup_random_text('positive')
+      }
+      client.push_message(group_id, message)
+    else
+      message = {
+        type: "sticker",
+        packageId: STICKER_PACKAGE_ID,
+        stickerId: pickup_random_sticker_id
+      }
+      client.push_message(group_id, message)
+    end
   end
 
   private
