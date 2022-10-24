@@ -7,7 +7,6 @@ class WebhookController < ApplicationController
     # @group = Group.create({group_id: 123456})
   end
 
-  
   def callback
     body = request.body.read
 
@@ -24,35 +23,42 @@ class WebhookController < ApplicationController
 
     events.each { |event|
       case event
+      # グループ参加時
       when Line::Bot::Event::Join
         group_id = body["events"][0]["source"]["groupId"]
         @group = Group.create({group_id: group_id})
+      # グループ退会時
       when Line::Bot::Event::Leave
         group_id = body["events"][0]["source"]["groupId"]
         Group.where({group_id: group_id}).destroy_all
+      # メッセージ受信時
       when Line::Bot::Event::Message
-        case event.type
-        when Line::Bot::Event::MessageType::Text
-          message = {
-            type: 'text',
-            text: pickup_random_text('positive')
-          }
-          client.reply_message(event['replyToken'], message)
-          # client.push_message("user_id or group_id", message)
-          number = client.get_number_of_message_deliveries("20221020")
-          puts '-'*100
-          puts number
-        else
-          message = {
-            type: "sticker",
-            packageId: STICKER_PACKAGE_ID,
-            stickerId: pickup_random_sticker_id
-          }
-          client.reply_message(event['replyToken'], message)
-        end
+        message(body)
       end
     }
     head :ok
+  end
+
+  def message(body)
+    case body["events"][0]["message"]["type"]
+    when "text"
+      message = {
+        type: 'text',
+        text: pickup_random_text('positive')
+      }
+      client.reply_message(body["events"][0]['replyToken'], message)
+      # client.push_message("user_id or group_id", message)
+      number = client.get_number_of_message_deliveries("20221020")
+      puts '-'*100
+      puts number
+    else
+      message = {
+        type: "sticker",
+        packageId: STICKER_PACKAGE_ID,
+        stickerId: pickup_random_sticker_id
+      }
+      client.reply_message(body["events"][0]['replyToken'], message)
+    end
   end
 
   private
