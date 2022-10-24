@@ -3,20 +3,33 @@ require 'line/bot'
 class WebhookController < ApplicationController
   protect_from_forgery except: [:callback] # CSRF対策無効化
 
+  def create
+    # @group = Group.create({group_id: 123456})
+  end
+
+  
   def callback
     body = request.body.read
-    puts '-'*100
-    puts request.body.read
-    puts '-'*100
 
     signature = request.env['HTTP_X_LINE_SIGNATURE']
     unless client.validate_signature(body, signature)
       head 470
     end
-
+    
     events = client.parse_events_from(body)
+
+    # json形式のbodyをハッシュに変換
+    require "json"
+    body = JSON.parse(body)
+
     events.each { |event|
       case event
+      when Line::Bot::Event::Join
+        group_id = body["events"][0]["source"]["groupId"]
+        @group = Group.create({group_id: group_id})
+      when Line::Bot::Event::Leave
+        group_id = body["events"][0]["source"]["groupId"]
+        Group.where({group_id: group_id}).destroy_all
       when Line::Bot::Event::Message
         case event.type
         when Line::Bot::Event::MessageType::Text
