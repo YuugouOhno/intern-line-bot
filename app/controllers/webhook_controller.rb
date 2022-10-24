@@ -30,31 +30,35 @@ class WebhookController < ApplicationController
         message_type = event["message"]["type"]
         text = event["message"]["text"]
         @message = Message.create({group_id: group.id, posted_at: posted_at, message_type: message_type, text: text})
+        message
       end
     }
     head :ok
   end
 
-  private
-    def message(event)
-      case event["message"]["type"]
-      when "text"
-        message = {
-          type: 'text',
-          text: pickup_random_text('positive')
-        }
-        client.reply_message(event['replyToken'], message)
-        number = client.get_number_of_message_deliveries("20221020")
-      else
-        message = {
-          type: "sticker",
-          packageId: STICKER_PACKAGE_ID,
-          stickerId: pickup_random_sticker_id
-        }
-        client.reply_message(event['replyToken'], message)
-      end
+  def message
+    last_message = Message.last
+    puts '='*100
+    puts last_message.text
+    group_id = Group.find(last_message.group_id).group_id
+    case last_message.message_type
+    when "text"
+      message = {
+        type: 'text',
+        text: pickup_random_text('positive')
+      }
+      client.push_message(group_id, message)
+    else
+      message = {
+        type: "sticker",
+        packageId: STICKER_PACKAGE_ID,
+        stickerId: pickup_random_sticker_id
+      }
+      client.push_message(group_id, message)
     end
-  
+  end
+
+  private
     def client
       @client ||= Line::Bot::Client.new { |config|
         config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
