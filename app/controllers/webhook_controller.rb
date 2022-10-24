@@ -18,30 +18,27 @@ class WebhookController < ApplicationController
       # グループ参加時
       when Line::Bot::Event::Join
         group_id = event['source']['groupId']
-        @group = Group.create({group_id: group_id})
+        group = Group.create({group_id: group_id})
       # グループ退会時
       when Line::Bot::Event::Leave
         group_id = event['source']['groupId']
-        Group.where({group_id: group_id}).destroy_all
+        Group.find_by(group_id: group_id).destroy
       # メッセージ受信時
       when Line::Bot::Event::Message
         group = Group.find_by(group_id: event['source']['groupId'])
-        posted_at = Time.now
         message_type = event["message"]["type"]
         text = event["message"]["text"]
-        @message = Message.create({group_id: group.id, posted_at: posted_at, message_type: message_type, text: text})
-        message
+        message = Message.create({group_id: group.id, message_type: message_type, text: text})
+
+        push_message(message)
       end
     }
     head :ok
   end
 
-  def message
-    last_message = Message.last
-    puts '='*100
-    puts last_message.text
-    group_id = Group.find(last_message.group_id).group_id
-    case last_message.message_type
+  def push_message(message)
+    group_id = message.group.group_id
+    case message.message_type
     when "text"
       message = {
         type: 'text',
