@@ -21,7 +21,7 @@ task :push_message => :environment do
         # 個人へのメッセージを送信
         message = {
           type: 'text',
-          text: 'あなたの最後の一言「' + latest_message.text + '」によってグループの会話が止まりました。'
+          text: "あなたの最後の一言「#{latest_message.text}」によってグループの会話が止まりました。"
         }
         client.push_message(latest_message.user_id, message)
       else

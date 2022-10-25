@@ -30,7 +30,7 @@ class WebhookController < ApplicationController
           message_type = event["message"]["type"]
           user_id = event['source']['userId']
           text = event["message"]["text"]
-          message = Message.create({group_id: group.id, message_type: message_type, user_id: user_id, text: text})
+          message = Message.create(group_id: group.id, message_type: message_type, user_id: user_id, text: text)
         else
           message = {
             type: 'text',
