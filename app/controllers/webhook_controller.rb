@@ -13,7 +13,7 @@ class WebhookController < ApplicationController
     
     events = client.parse_events_from(body)
 
-    events.each { |event|
+    events.each do |event|
       case event
       # グループ参加時
       when Line::Bot::Event::Join
@@ -30,7 +30,7 @@ class WebhookController < ApplicationController
         text = event["message"]["text"]
         message = Message.create({group_id: group.id, message_type: message_type, text: text})
       end
-    }
+    end
     head :ok
   end
 
