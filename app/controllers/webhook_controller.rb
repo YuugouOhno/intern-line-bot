@@ -25,7 +25,6 @@ class WebhookController < ApplicationController
         Group.find_by(group_id: group_id).destroy
       # メッセージ受信時
       when Line::Bot::Event::Message
-        puts client
         group = Group.find_by(group_id: event['source']['groupId'])
         message_type = event["message"]["type"]
         text = event["message"]["text"]
