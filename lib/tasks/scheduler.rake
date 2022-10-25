@@ -1,26 +1,33 @@
 desc "heroku shedulerから最新のメッセージに対して返信する"
 task :push_message => :environment do
-  message = Message.order(posted_at: :desc).first
-  group_id = message.group.group_id
-  case message.message_type
-  when "text"
-    message = {
-      type: 'text',
-      text: pickup_random_text('positive')
-    }
-    client.push_message(group_id, message)
-  else
-    message = {
-      type: "sticker",
-      packageId: STICKER_PACKAGE_ID,
-      stickerId: pickup_random_sticker_id
-    }
-    client.push_message(group_id, message)
-  end
+  time_10min_ago = Time.zone.now - 60*10
+  time_20min_ago = Time.zone.now - 60*20
+  recent_message = Message.where(posted_at: time_20min_ago...).order(posted_at: "DESC").group_by{|message| message.group}
+  recent_message.each { |messages|
+    group_id = messages[0].group_id
+    latest_message = messages[1].first
+    if latest_message.posted_at < time_10min_ago
+      case latest_message.message_type
+      when "text"
+        message = {
+          type: 'text',
+          text: pickup_random_text('positive')
+        }
+        client.push_message(group_id, message)
+      else
+        message = {
+          type: "sticker",
+          packageId: STICKER_PACKAGE_ID,
+          stickerId: pickup_random_sticker_id
+        }
+        client.push_message(group_id, message)
+      end
+    end
+  }
+  
 end
 
 private
-
 def client
   @client ||= Line::Bot::Client.new { |config|
     config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
