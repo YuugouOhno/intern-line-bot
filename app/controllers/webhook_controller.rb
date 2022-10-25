@@ -25,10 +25,19 @@ class WebhookController < ApplicationController
         Group.find_by(group_id: group_id).destroy
       # メッセージ受信時
       when Line::Bot::Event::Message
-        group = Group.find_by(group_id: event['source']['groupId'])
-        message_type = event["message"]["type"]
-        text = event["message"]["text"]
-        message = Message.create({group_id: group.id, message_type: message_type, text: text})
+        if event['source']['type'] == 'group'
+          group = Group.find_by(group_id: event['source']['groupId'])
+          message_type = event["message"]["type"]
+          user_id = event['source']['userId']
+          text = event["message"]["text"]
+          message = Message.create({group_id: group.id, message_type: message_type, user_id: user_id, text: text})
+        else
+          message = {
+            type: 'text',
+            text: 'グループに招待してご利用ください'
+          }
+          client.reply_message(event['replyToken'], message)
+        end
       end
     end
     head :ok

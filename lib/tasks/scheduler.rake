@@ -18,6 +18,12 @@ task :push_message => :environment do
           text: pickup_random_text('positive')
         }
         client.push_message(group_id, message)
+        # 個人へのメッセージを送信
+        message = {
+          type: 'text',
+          text: 'あなたの最後の一言「' + latest_message.text + '」によってグループの会話が止まりました。'
+        }
+        client.push_message(latest_message.user_id, message)
       else
         message = {
           type: "sticker",
