@@ -18,7 +18,7 @@ class WebhookController < ApplicationController
       # グループ参加時
       when Line::Bot::Event::Join
         group_id = event['source']['groupId']
-        group = Group.create({group_id: group_id})
+        group = Group.create(group_id: group_id)
       # グループ退会時
       when Line::Bot::Event::Leave
         group_id = event['source']['groupId']
@@ -35,27 +35,26 @@ class WebhookController < ApplicationController
     }
     head :ok
   end
-
-  def push_message(message)
-    group_id = message.group.group_id
-    case message.message_type
-    when "text"
-      message = {
-        type: 'text',
-        text: pickup_random_text('positive')
-      }
-      client.push_message(group_id, message)
-    else
-      message = {
-        type: "sticker",
-        packageId: STICKER_PACKAGE_ID,
-        stickerId: pickup_random_sticker_id
-      }
-      client.push_message(group_id, message)
-    end
-  end
-
   private
+    def push_message(message)
+      group_id = message.group.group_id
+      case message.message_type
+      when "text"
+        message = {
+          type: 'text',
+          text: pickup_random_text('positive')
+        }
+        client.push_message(group_id, message)
+      else
+        message = {
+          type: "sticker",
+          packageId: STICKER_PACKAGE_ID,
+          stickerId: pickup_random_sticker_id
+        }
+        client.push_message(group_id, message)
+      end
+    end
+
     def client
       @client ||= Line::Bot::Client.new { |config|
         config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
