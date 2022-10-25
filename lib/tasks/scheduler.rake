@@ -1,12 +1,16 @@
 desc "heroku shedulerから最新のメッセージに対して返信する"
 task :push_message => :environment do
-  time_10min_ago = Time.zone.now - 60*10
-  time_20min_ago = Time.zone.now - 60*20
+  time_10min_ago = Time.zone.now - 10.minutes
+  time_20min_ago = Time.zone.now - 20.minutes
+  # 20分未満に送られたメッセージを新しい順に並べ、group_idごとに取得
   recent_message = Message.where(posted_at: time_20min_ago...).order(posted_at: "DESC").group_by{|message| message.group}
-  recent_message.each { |messages|
-    group_id = messages[0].group_id
-    latest_message = messages[1].first
-    if latest_message.posted_at < time_10min_ago
+  recent_message.each do |group, messages|
+    group_id = group.group_id
+    # 同じグループの中で一番新しいメッセージを取得
+    latest_message = messages.first
+    # 最新のメッセージが現在時刻より10分以上前に送られている場合、最後の一言と判断してpush_messageを送信
+    if latest_message.posted_at <= time_10min_ago
+      # 最後のメッセージがテキストならテキスト、それ以外ならスタンプを送信
       case latest_message.message_type
       when "text"
         message = {
@@ -23,7 +27,7 @@ task :push_message => :environment do
         client.push_message(group_id, message)
       end
     end
-  }
+  end
   
 end
 
