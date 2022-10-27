@@ -26,7 +26,7 @@ class WebhookController < ApplicationController
       # メッセージ受信時
       when Line::Bot::Event::Message
         if event['source']['type'] == 'group'
-          group = Group.find_by(line_group_id: event['source']['groupId'])
+          group = Group.find_by!(line_group_id: event['source']['groupId'])
           user = User.find_or_create_by(line_user_id: event['source']['userId'])
           GroupUser.find_or_create_by(group_id: group.id, user_id: user.id)
           message_type = event["message"]["type"]

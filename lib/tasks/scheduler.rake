@@ -9,7 +9,7 @@ task :push_message => :environment do
     # 同じグループの中で一番新しいメッセージを取得
     latest_message = messages.first
     # 最新のメッセージが現在時刻より10分以上前に送られている場合、最後の一言と判断してpush_messageを送信
-    if latest_message.posted_at >= time_10min_ago
+    if latest_message.posted_at <= time_10min_ago
       # 最後のメッセージがテキストならテキスト、それ以外ならスタンプを送信
       case latest_message.message_type
       when "text"
