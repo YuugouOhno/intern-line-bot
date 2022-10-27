@@ -17,20 +17,21 @@ class WebhookController < ApplicationController
       case event
       # グループ参加時
       when Line::Bot::Event::Join
-        group_id = event['source']['groupId']
-        group = Group.create(group_id: group_id)
+        line_group_id = event['source']['groupId']
+        group = Group.create(line_group_id: line_group_id)
       # グループ退会時
       when Line::Bot::Event::Leave
-        group_id = event['source']['groupId']
-        Group.find_by(group_id: group_id).destroy
+        line_group_id = event['source']['groupId']
+        Group.find_by(line_group_id: line_group_id).destroy
       # メッセージ受信時
       when Line::Bot::Event::Message
         if event['source']['type'] == 'group'
-          group = Group.find_by(group_id: event['source']['groupId'])
+          group = Group.find_by!(line_group_id: event['source']['groupId'])
+          user = User.find_or_create_by(line_user_id: event['source']['userId'])
+          GroupUser.find_or_create_by(group_id: group.id, user_id: user.id)
           message_type = event["message"]["type"]
-          user_id = event['source']['userId']
           text = event["message"]["text"]
-          message = Message.create(group_id: group.id, message_type: message_type, user_id: user_id, text: text)
+          message = Message.create(group_id: group.id, user_id: user.id, message_type: message_type, text: text)
         else
           message = {
             type: 'text',
